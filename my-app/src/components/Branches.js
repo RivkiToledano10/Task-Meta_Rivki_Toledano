@@ -10,8 +10,8 @@ import TableRow from '@mui/material/TableRow';
 import { useDispatch, useSelector } from 'react-redux';
 import { getBranches } from '../api/BranchesService.js';
 import { updateBranches } from '../features/BranchesSlice.js';
+import { Typography, MenuItem, Select } from "@mui/material";
 import useStyles from '../style/styles.js';
-import { Typography } from "@mui/material";
 
 export default function Branches() {
     const [searchTerm, setSearchTerm] = useState('');
@@ -19,7 +19,10 @@ export default function Branches() {
     const [sortDirection, setSortDirection] = useState('asc');
     const [sortColumn, setSortColumn] = useState(null);
     const [filteredBranches, setFilteredBranches] = useState([]);
-    const classes = useStyles(); // לא נזכיר כאן את ה-theme
+    const [selectedRegion, setSelectedRegion] = useState('');
+    const [cities, setCities] = useState([]);
+    const [selectedCity, setSelectedCity] = useState('');
+    const classes = useStyles();
     const dispatch = useDispatch();
     const branches = useSelector((state) => state.branches.branches);
 
@@ -50,6 +53,17 @@ export default function Branches() {
         }
     }, [searchTerms, branches, searchTerm]);
 
+    useEffect(() => {
+        // Filter cities based on selected region
+        if (selectedRegion) {
+            const filteredCities = branches
+                .filter(branch => branch.store_region === selectedRegion)
+                .map(branch => branch.city);
+            setCities([...new Set(filteredCities)]); 
+            setCities([]);
+        }
+    }, [branches, selectedRegion]);
+
     const handleSort = (column) => {
         const direction = column === sortColumn && sortDirection === 'asc' ? 'desc' : 'asc';
         const sortedData = [...filteredBranches].sort((a, b) => {
@@ -71,17 +85,53 @@ export default function Branches() {
         }));
     };
 
+    const handleRegionChange = (event) => {
+        const region = event.target.value;
+        setSelectedRegion(region);
+        setSelectedCity('');
+        
+        const filteredCities = branches
+            .filter(branch => branch.store_region === region)
+            .map(branch => branch.city);
+        setCities([...new Set(filteredCities)]); 
+    };
+
+    const handleCityChange = (event) => {
+        setSelectedCity(event.target.value);
+    };
+
     return (
         <Paper className={classes.paper}>
-            <br></br>
             <Typography variant="h5" className={classes.title}>Company Branches</Typography>
-            <br></br>
             <InputBase
                 placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className={classes.input}
             />
+            <Select
+                value={selectedRegion}
+                onChange={handleRegionChange}
+                displayEmpty
+                id="region_select"
+                className={classes.select}
+            >
+                <MenuItem key="" value="" disabled>Select Region</MenuItem>
+                {[...new Set(branches.map(branch => branch.store_region))].map((region, index) => (
+                    <MenuItem key={index} value={region}>{region}</MenuItem>
+                ))}
+            </Select>
+            <Select
+                value={selectedCity}
+                onChange={handleCityChange}
+                displayEmpty
+                className={classes.select}
+                id="city-dropdown"
+            >
+                <MenuItem key="" value="" disabled>Select City</MenuItem>
+                {cities.map((city, index) => (
+                    <MenuItem key={index} value={city}>{city}</MenuItem>
+                ))}
+            </Select>
             <TableContainer>
                 <Table className={classes.table}>
                     <TableHead>
@@ -89,7 +139,7 @@ export default function Branches() {
                             <TableCell className={classes.tableCell} onClick={() => handleSort('store_id')}>Store ID</TableCell>
                             <TableCell className={classes.tableCell} onClick={() => handleSort('store_title')}>Store Title</TableCell>
                             <TableCell className={classes.tableCell} onClick={() => handleSort('store_address')}>Store Address</TableCell>
-                            <TableCell className={classes.tableCell} onClick={() => handleSort('store_region')}>Employee Contact</TableCell>
+                            <TableCell className={classes.tableCell} onClick={() => handleSort('store_region')}>Store Region</TableCell>
                             <TableCell className={classes.tableCell} onClick={() => handleSort('city')}>City</TableCell>
                         </TableRow>
                     </TableHead>
@@ -101,15 +151,17 @@ export default function Branches() {
                             <TableCell><InputBase placeholder="Search..." onChange={(e) => handleSearch('store_region', e.target.value)} /></TableCell>
                             <TableCell><InputBase placeholder="Search..." onChange={(e) => handleSearch('city', e.target.value)} /></TableCell>
                         </TableRow>
-                        {filteredBranches.map(branch => (
-                            <TableRow key={branch.store_id}>
-                                <TableCell className={classes.tableCell}>{branch.store_id}</TableCell>
-                                <TableCell className={classes.tableCell}>{branch.store_title}</TableCell>
-                                <TableCell className={classes.tableCell}>{branch.store_address}</TableCell>
-                                <TableCell className={classes.tableCell}>{branch.store_region}</TableCell>
-                                <TableCell className={classes.tableCell}>{branch.city}</TableCell>
-                            </TableRow>
-                        ))}
+                        {filteredBranches
+                            .filter(branch => selectedCity ? branch.city === selectedCity : true)
+                            .map(branch => (
+                                <TableRow key={branch.store_id}>
+                                    <TableCell className={classes.tableCell}>{branch.store_id}</TableCell>
+                                    <TableCell className={classes.tableCell}>{branch.store_title}</TableCell>
+                                    <TableCell className={classes.tableCell}>{branch.store_address}</TableCell>
+                                    <TableCell className={classes.tableCell}>{branch.store_region}</TableCell>
+                                    <TableCell className={classes.tableCell}>{branch.city}</TableCell>
+                                </TableRow>
+                            ))}
                     </TableBody>
                 </Table>
             </TableContainer>

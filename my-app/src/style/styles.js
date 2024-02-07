@@ -18,6 +18,7 @@ const useStyles = makeStyles({
     },
     tableCell: {
         borderBottom: `1px solid ${theme.palette.divider}`,
+        cursor:'pointer'
     },
     paper:{
         textAlign:'center'
