@@ -60,6 +60,7 @@ export default function Branches() {
                 .filter(branch => branch.store_region === selectedRegion)
                 .map(branch => branch.city);
             setCities([...new Set(filteredCities)]); 
+             } else {
             setCities([]);
         }
     }, [branches, selectedRegion]);
